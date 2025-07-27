@@ -1,11 +1,10 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import type { ECGConfig, CustomBeatParameters, ECGWaveParameters, DynamicPatternConfig } from '../types/ecg';
 import { ParameterInput } from './ParameterInput';
 import { CustomBeatRow } from './CustomBeatRow';
 
 interface ECGControlsProps {
   config: ECGConfig;
-  onConfigChange: (config: ECGConfig) => void;
   updateWaveParameters: (field: keyof ECGWaveParameters, value: number) => void;
   updateRWavePattern: (field: keyof DynamicPatternConfig, value: number | boolean) => void;
   updatePWavePattern: (field: keyof DynamicPatternConfig, value: number | boolean) => void;
@@ -14,13 +13,11 @@ interface ECGControlsProps {
   addCustomBeat: () => void;
   updateCustomBeat: (index: number, beat: CustomBeatParameters) => void;
   removeCustomBeat: (index: number) => void;
-  resetToDefaults: () => void;
   applyChanges: () => void;
 }
 
 export const ECGControls: React.FC<ECGControlsProps> = ({ 
   config, 
-  onConfigChange,
   updateWaveParameters,
   updateRWavePattern,
   updatePWavePattern,
@@ -29,7 +26,6 @@ export const ECGControls: React.FC<ECGControlsProps> = ({
   addCustomBeat,
   updateCustomBeat,
   removeCustomBeat,
-  resetToDefaults,
   applyChanges
 }) => {
 

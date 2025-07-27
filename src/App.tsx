@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { ECGCanvas } from './components/ECGCanvas';
 import { ECGControls } from './components/ECGControls';
 import { useECGConfig } from './hooks/useECGConfig';
@@ -15,7 +15,6 @@ function App() {
     addCustomBeat,
     updateCustomBeat,
     removeCustomBeat,
-    resetToDefaults,
     applyChanges
   } = useECGConfig();
 
@@ -25,9 +24,6 @@ function App() {
       <div className="container">
         <ECGControls 
           config={config} 
-          onConfigChange={(newConfig) => {
-            // This will be handled by the individual update functions
-          }}
           updateWaveParameters={updateWaveParameters}
           updateRWavePattern={updateRWavePattern}
           updatePWavePattern={updatePWavePattern}
@@ -36,7 +32,6 @@ function App() {
           addCustomBeat={addCustomBeat}
           updateCustomBeat={updateCustomBeat}
           removeCustomBeat={removeCustomBeat}
-          resetToDefaults={resetToDefaults}
           applyChanges={applyChanges}
         />
         <ECGCanvas config={config} width={1000} height={400} />

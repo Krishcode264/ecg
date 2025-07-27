@@ -9,7 +9,7 @@ interface ECGCanvasProps {
 }
 
 const POINTER_RADIUS = 6;
-const ERASE_WIDTH = 12;
+
 
 export const ECGCanvas: React.FC<ECGCanvasProps> = ({ config, width, height }) => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -35,7 +35,6 @@ export const ECGCanvas: React.FC<ECGCanvasProps> = ({ config, width, height }) =
     }
 
     const small = 8;
-    const large = small * 5;
 
     // Vertical lines
     for (let x = 0; x <= width; x += small) {
@@ -92,8 +91,8 @@ export const ECGCanvas: React.FC<ECGCanvasProps> = ({ config, width, height }) =
         pointerXRef.current = 0;
         pathPointsRef.current = generateWaveformPoints();
       }
-      const es = pointerXRef.current - ERASE_WIDTH / 2;
-      const ee = pointerXRef.current + ERASE_WIDTH / 2;
+      const es = pointerXRef.current - 12 / 2;
+      const ee = pointerXRef.current + 12 / 2;
       const si = drawnPointsRef.current.findIndex(pt => pt && pt.x >= es);
       const ei = drawnPointsRef.current.findIndex(pt => pt && pt.x > ee);
       

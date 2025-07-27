@@ -1,8 +1,6 @@
 import type { ECGWaveParameters, Point, WaveformTimes, ScaledParameters, DynamicPatternConfig, CustomBeatParameters } from '../types/ecg';
 
 const PIXELS_PER_SECOND = 150;
-const POINTER_RADIUS = 6;
-const ERASE_WIDTH = 12;
 
 export class ECGGenerator {
   private globalBeatCounter = 0;
