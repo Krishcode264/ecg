@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1000, initial-scale=1.0" />
+    <title>ECG Waveform Animator (Custom Beats)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .controls {
+            flex: 1;
+            min-width: 320px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            max-height: 95vh;
+        }
+
+        .canvas-container {
+            flex: 2;
+            min-width: 600px;
+        }
+
+        svg {
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .param-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+
+        .param-group label {
+            flex: 1 0 145px;
+            font-size: 0.95em;
+            color: #555;
+        }
+
+        .param-group input {
+            flex: 1 0 70px;
+            padding: 4px;
+        }
+
+        #applyBtn,
+        #addCustomBeatBtn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #applyBtn {
+            background: #20a4f3;
+            color: white;
+        }
+
+        #applyBtn:hover {
+            background: #1394d9;
+        }
+
+        #addCustomBeatBtn {
+            background: #27ae60;
+            color: white;
+        }
+
+        .custom-beat-row {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+
+        .custom-beat-row label {
+            flex: 1 0 100px;
+            font-size: 0.85em;
+        }
+
+        .custom-beat-row input {
+            flex: 1 0 60px;
+            padding: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>ECG Waveform Animator (Custom Beats)</h1>
+    <div class="container">
+        <div class="controls">
+            <div class="param-group">
+                <label for="heart_rate">Heart Rate (bpm):</label>
+                <input type="number" id="heart_rate" value="70" step="1" min="20" max="250" />
+            </div>
+            <div class="param-group">
+                <label for="pixelsPerMv">Pixels per mV:</label>
+                <input type="number" id="pixelsPerMv" value="100" step="10" min="10" />
+            </div>
+
+            <h3>Wave Parameters (mV, sec)</h3>
+            <div class="param-group"><label for="h_p">P Wave Height:</label><input type="number" id="h_p" value="0.15"
+                    step="0.01"></div>
+            <div class="param-group"><label for="b_p">P Wave Breadth:</label><input type="number" id="b_p" value="0.08"
+                    step="0.01"></div>
+            <div class="param-group"><label for="h_q">Q Wave Height:</label><input type="number" id="h_q" value="-0.1"
+                    step="0.01"></div>
+            <div class="param-group"><label for="b_q">Q Wave Breadth:</label><input type="number" id="b_q" value="0.025"
+                    step="0.005"></div>
+            <div class="param-group"><label for="h_r">R Wave Height:</label><input type="number" id="h_r" value="1.2"
+                    step="0.1"></div>
+            <div class="param-group"><label for="b_r">R Wave Breadth:</label><input type="number" id="b_r" value="0.05"
+                    step="0.01"></div>
+            <div class="param-group"><label for="h_s">S Wave Height:</label><input type="number" id="h_s" value="-0.25"
+                    step="0.01"></div>
+            <div class="param-group"><label for="b_s">S Wave Breadth:</label><input type="number" id="b_s" value="0.025"
+                    step="0.005"></div>
+            <div class="param-group"><label for="h_t">T Wave Height:</label><input type="number" id="h_t" value="0.2"
+                    step="0.01"></div>
+            <div class="param-group"><label for="b_t">T Wave Breadth:</label><input type="number" id="b_t" value="0.16"
+                    step="0.01"></div>
+            <div class="param-group"><label for="l_pq">PQ Segment Length:</label><input type="number" id="l_pq"
+                    value="0.08" step="0.01"></div>
+            <div class="param-group"><label for="l_st">ST Segment Length:</label><input type="number" id="l_st"
+                    value="0.12" step="0.01"></div>
+            <div class="param-group"><label for="l_tp">TP Segment Length:</label><input type="number" id="l_tp"
+                    value="0.3" step="0.01"></div>
+            <div class="param-group"><label for="n_p">Default P Waves per QRS:</label><input type="number" id="n_p"
+                    value="1" step="1"></div>
+
+            <h3>Dynamic R Wave Pattern</h3>
+            <div class="param-group"><label><input type="checkbox" id="rWaveEnabled"> Enable R Wave Pattern</label>
+            </div>
+            <div class="param-group"><label for="rWaveCount">R Waves in Pattern:</label><input type="number"
+                    id="rWaveCount" value="2" step="1" min="0"></div>
+            <div class="param-group"><label for="rWaveInterval">Apply After N QRS:</label><input type="number"
+                    id="rWaveInterval" value="5" step="1" min="0"></div>
+
+            <h3>Dynamic P Wave Pattern</h3>
+            <div class="param-group"><label><input type="checkbox" id="pWaveEnabled"> Enable P Wave Pattern</label>
+            </div>
+            <div class="param-group"><label for="pWaveCount">P Waves in Pattern:</label><input type="number"
+                    id="pWaveCount" value="0" step="1" min="0"></div>
+            <div class="param-group"><label for="pWaveInterval">Apply After N QRS:</label><input type="number"
+                    id="pWaveInterval" value="3" step="1" min="0"></div>
+
+            <h3>Custom Beat Sequence</h3>
+            <div class="param-group"><label><input type="checkbox" id="useCustomBeatParameters"> Enable Custom Beat
+                    Sequence</label></div>
+            <div class="param-group"><label for="repeatInterval">Normal Beats Before Repeat:</label><input type="number"
+                    id="repeatInterval" value="10" step="1" min="0"></div>
+            <div id="customBeatsContainer"></div>
+            <button id="addCustomBeatBtn">+ Add Custom Beat</button>
+
+            <button id="applyBtn">Apply Changes</button>
+        </div>
+        <div class="canvas-container">
+            <svg id="ecgSVG" width="1000" height="400"></svg>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const svg = document.getElementById("ecgSVG");
+            let animationFrameId;
+            let lastTimestamp = 0;
+            let pointerX = 0;
+            let firstSweep = true;
+
+            let waveformPath, gridGroup, pathPoints = [], drawnPoints = [], pointerHead;
+
+            const PIXELS_PER_SECOND = 150;
+            const POINTER_RADIUS = 6;
+            const ERASE_WIDTH = 12;
+            let PIXELS_PER_MV = parseFloat(document.getElementById("pixelsPerMv").value);
+
+            const getParams = () => ({
+                heart_rate: parseFloat(document.getElementById("heart_rate").value),
+                h_p: parseFloat(document.getElementById("h_p").value),
+                b_p: parseFloat(document.getElementById("b_p").value),
+                h_q: parseFloat(document.getElementById("h_q").value),
+                b_q: parseFloat(document.getElementById("b_q").value),
+                h_r: parseFloat(document.getElementById("h_r").value),
+                b_r: parseFloat(document.getElementById("b_r").value),
+                h_s: parseFloat(document.getElementById("h_s").value),
+                b_s: parseFloat(document.getElementById("b_s").value),
+                h_t: parseFloat(document.getElementById("h_t").value),
+                b_t: parseFloat(document.getElementById("b_t").value),
+                l_pq: parseFloat(document.getElementById("l_pq").value),
+                l_st: parseFloat(document.getElementById("l_st").value),
+                l_tp: parseFloat(document.getElementById("l_tp").value),
+                n_p: parseInt(document.getElementById("n_p").value, 10),
+            });
+
+            // 🟢 Global counters to persist beat state across pointer resets
+            let globalBeatCounter = 0;
+            let globalCustomIdx = 0;
+            let globalWaitingNormalBeats = 0;
+            let globalRCycleCounter = 0;
+            let globalPCycleCounter = 0;
+
+            const customBeatsContainer = document.getElementById("customBeatsContainer");
+            const addCustomBeatBtn = document.getElementById("addCustomBeatBtn");
+
+            let customBeatsParameters = [];
+
+            function createBeatConfigRow(beatData = {}) {
+                const defaults = {
+                    h_p: 0.15, b_p: 0.08, h_q: -0.1, b_q: 0.025, h_r: 1.2, b_r: 0.05,
+                    h_s: -0.25, b_s: 0.025, h_t: 0.2, b_t: 0.16,
+                    l_pq: 0.08, l_st: 0.12, l_tp: 0.3
+                };
+                const data = { ...defaults, ...beatData };
+
+                const div = document.createElement("div");
+                div.className = "custom-beat-row";
+
+                const fields = [
+                    ["h_p", "P Height"], ["b_p", "P Breadth"],
+                    ["h_q", "Q Height"], ["b_q", "Q Breadth"],
+                    ["h_r", "R Height"], ["b_r", "R Breadth"],
+                    ["h_s", "S Height"], ["b_s", "S Breadth"],
+                    ["h_t", "T Height"], ["b_t", "T Breadth"],
+                    ["l_pq", "PQ Length"], ["l_st", "ST Length"], ["l_tp", "TP Length"]
+                ];
+
+                fields.forEach(([key, label]) => {
+                    const wrapper = document.createElement("div");
+                    wrapper.style = "display:flex;align-items:center;gap:6px;margin-bottom:4px;";
+                    const lab = document.createElement("label");
+                    lab.textContent = label + ":";
+                    const input = document.createElement("input");
+                    input.type = "number";
+                    input.value = data[key];
+                    input.step = "0.01";
+                    input.dataset.param = key;
+                    wrapper.appendChild(lab);
+                    wrapper.appendChild(input);
+                    div.appendChild(wrapper);
+                });
+
+                const removeBtn = document.createElement("button");
+                removeBtn.textContent = "Remove Beat";
+                removeBtn.style = "margin-top:5px;background:#e74c3c;color:white;border:none;padding:4px 8px;cursor:pointer;";
+                removeBtn.onclick = () => div.remove();
+                div.appendChild(removeBtn);
+
+                customBeatsContainer.appendChild(div);
+            }
+
+            addCustomBeatBtn.addEventListener("click", () => {
+                createBeatConfigRow();
+            });
+
+            const raisedCosinePulse = (t, h, b, t0) => {
+                if (b === 0 || t < t0 || t > t0 + b) return 0;
+                return (h / 2) * (1 - Math.cos((2 * Math.PI * (t - t0)) / b));
+            };
+
+            function drawGridSVG() {
+                if (gridGroup) gridGroup.innerHTML = "";
+                else {
+                    gridGroup = document.createElementNS(svg.namespaceURI, "g");
+                    svg.appendChild(gridGroup);
+                }
+                const small = 8, large = small * 5;
+                for (let x = 0; x <= svg.width.baseVal.value; x += small) {
+                    const line = document.createElementNS(svg.namespaceURI, "line");
+                    line.setAttribute("x1", x);
+                    line.setAttribute("y1", 0);
+                    line.setAttribute("x2", x);
+                    line.setAttribute("y2", svg.height.baseVal.value);
+                    line.setAttribute("stroke", "#eee");
+                    gridGroup.appendChild(line);
+                }
+                for (let y = 0; y <= svg.height.baseVal.value; y += small) {
+                    const line = document.createElementNS(svg.namespaceURI, "line");
+                    line.setAttribute("x1", 0);
+                    line.setAttribute("y1", y);
+                    line.setAttribute("x2", svg.width.baseVal.value);
+                    line.setAttribute("y2", y);
+                    line.setAttribute("stroke", "#eee");
+                    gridGroup.appendChild(line);
+                }
+            }
+            
+            function generateWaveformPoints() {
+                const pDefault = getParams();
+
+                const totalTime = svg.width.baseVal.value / PIXELS_PER_SECOND;
+                const y0 = svg.height.baseVal.value / 2;
+                const pts = [];
+                const dt = 1 / PIXELS_PER_SECOND;
+
+                const rWaveEnabled = document.getElementById("rWaveEnabled").checked;
+                const rWaveCountInput = parseInt(document.getElementById("rWaveCount").value, 10);
+                const rWaveIntervalInput = parseInt(document.getElementById("rWaveInterval").value, 10);
+                const pWaveEnabled = document.getElementById("pWaveEnabled").checked;
+                const pWaveCountInput = parseInt(document.getElementById("pWaveCount").value, 10);
+                const pWaveIntervalInput = parseInt(document.getElementById("pWaveInterval").value, 10);
+
+                const useCustomBeatParametersInput = document.getElementById("useCustomBeatParameters").checked;
+                const repeatIntervalInput = parseInt(document.getElementById("repeatInterval").value, 10);
+
+                let rCycleCounterLocal = globalRCycleCounter;
+                let pCycleCounterLocal = globalPCycleCounter;
+                let beatCounter = globalBeatCounter;
+                let customIdx = globalCustomIdx;
+                let waitingNormalBeats = globalWaitingNormalBeats;
+
+                let tElapsed = 0;
+
+                while (tElapsed <= totalTime) {
+                    let pCurrent = pDefault;
+
+                    if (useCustomBeatParametersInput) {
+                        if (customBeatsParameters.length > 0 && waitingNormalBeats === 0) {
+                            pCurrent = { ...pDefault, ...customBeatsParameters[customIdx] };
+                            customIdx++;
+                            if (customIdx >= customBeatsParameters.length) {
+                                customIdx = 0;
+                                waitingNormalBeats = repeatIntervalInput;
+                            }
+                        } else if (waitingNormalBeats > 0) {
+                            waitingNormalBeats--;
+                        }
+                    }
+
+                    let curPCount = pCurrent.n_p;
+                    if (pWaveEnabled) {
+                        pCycleCounterLocal++;
+                        if (pWaveIntervalInput > 0 && pCycleCounterLocal >= pWaveIntervalInput) {
+                            curPCount = pWaveCountInput;
+                            pCycleCounterLocal = 0;
+                        }
+                    }
+
+                    let curRCount = 1;
+                    if (rWaveEnabled) {
+                        rCycleCounterLocal++;
+                        if (rWaveIntervalInput > 0 && rCycleCounterLocal >= rWaveIntervalInput) {
+                            curRCount = rWaveCountInput;
+                            rCycleCounterLocal = 0;
+                        }
+                    }
+
+                    const base = curPCount * (pCurrent.b_p + pCurrent.l_pq)
+                        + (pCurrent.b_q + pCurrent.b_r + pCurrent.b_s) * (curRCount > 0 ? 1 : 0)
+                        + pCurrent.l_st + pCurrent.b_t + pCurrent.l_tp;
+
+                    const heart_period = 60 / (pCurrent.heart_rate || 60);
+                    const sf = heart_period / base;
+
+                    const s = {
+                        b_p: pCurrent.b_p * sf, l_pq: pCurrent.l_pq * sf,
+                        b_q: pCurrent.b_q * sf, b_r: pCurrent.b_r * sf,
+                        b_s: pCurrent.b_s * sf, l_st: pCurrent.l_st * sf,
+                        b_t: pCurrent.b_t * sf, l_tp: pCurrent.l_tp * sf
+                    };
+
+                    const cycleDuration = curPCount * (s.b_p + s.l_pq)
+                        + (curRCount > 0 ? (s.b_q + s.b_r + s.b_s) : 0)
+                        + s.l_st + s.b_t + s.l_tp;
+
+                    const times = (() => {
+                        let off = tElapsed;
+                        const t = { P: [], Q: 0, R: [], S: [], T: 0 };
+
+                        for (let i = 0; i < curPCount; i++) {
+                            t.P.push(off + i * (s.b_p + s.l_pq));
+                        }
+                        off += curPCount * (s.b_p + s.l_pq);
+
+                        if (curRCount > 0) {
+                            for (let i = 0; i < curRCount; i++) {
+                                t.Q = off;
+                                off += s.b_q;
+                                t.R.push(off);
+                                off += s.b_r;
+                                t.S.push(off);
+                                off += s.b_s;
+                                if (i < curRCount - 1) off += s.l_pq / 2;
+                            }
+                        }
+                        off += s.l_st;
+                        t.T = off;
+                        return t;
+                    })();
+
+                    const tEnd = tElapsed + cycleDuration;
+
+                    for (let t = tElapsed; t < tEnd; t += dt) {
+                        let v = 0;
+                        for (let start of times.P) {
+                            if (t >= start && t < start + s.b_p) {
+                                v = raisedCosinePulse(t, pCurrent.h_p, s.b_p, start);
+                                break;
+                            }
+                        }
+                        if (!v && curRCount > 0 && t >= times.Q && t < times.Q + s.b_q) {
+                            v = raisedCosinePulse(t, pCurrent.h_q, s.b_q, times.Q);
+                        }
+                        if (!v && curRCount > 0) {
+                            for (let r of times.R) {
+                                if (t >= r && t < r + s.b_r) {
+                                    v = raisedCosinePulse(t, pCurrent.h_r, s.b_r, r);
+                                    break;
+                                }
+                            }
+                        }
+                        if (!v && curRCount > 0) {
+                            for (let sWave of times.S) {
+                                if (t >= sWave && t < sWave + s.b_s) {
+                                    v = raisedCosinePulse(t, pCurrent.h_s, s.b_s, sWave);
+                                    break;
+                                }
+                            }
+                        }
+                        if (!v && t >= times.T && t < times.T + s.b_t) {
+                            v = raisedCosinePulse(t, pCurrent.h_t, s.b_t, times.T);
+                        }
+
+                        pts.push({
+                            x: t * PIXELS_PER_SECOND,
+                            y: y0 - v * PIXELS_PER_MV
+                        });
+                    }
+
+                    tElapsed += cycleDuration;
+                    beatCounter++;
+                }
+
+                // 🟢 Persist counters after generating this batch
+                globalRCycleCounter = rCycleCounterLocal;
+                globalPCycleCounter = pCycleCounterLocal;
+                globalBeatCounter = beatCounter;
+                globalCustomIdx = customIdx;
+                globalWaitingNormalBeats = waitingNormalBeats;
+
+                return pts;
+            }
+
+
+            const pointsToPath = pts =>
+                pts.reduce((str, p, i) => str + (i ? " L" : "M") + ` ${p.x} ${p.y}`, "");
+
+            function initializeSVG() {
+                drawGridSVG();
+                if (waveformPath) svg.removeChild(waveformPath);
+                waveformPath = document.createElementNS(svg.namespaceURI, "path");
+                waveformPath.setAttribute("stroke", "#2c3e50");
+                waveformPath.setAttribute("fill", "none");
+                waveformPath.setAttribute("stroke-width", "2");
+                svg.appendChild(waveformPath);
+                if (pointerHead) svg.removeChild(pointerHead);
+                pointerHead = document.createElementNS(svg.namespaceURI, "circle");
+                pointerHead.setAttribute("r", POINTER_RADIUS);
+                pointerHead.setAttribute("fill", "#fff");
+                pointerHead.setAttribute("stroke", "#fff");
+                pointerHead.setAttribute("stroke-width", "2");
+                svg.appendChild(pointerHead);
+            }
+
+            function animationLoop(ts) {
+                const w = svg.width.baseVal.value;
+                const dt = lastTimestamp ? (ts - lastTimestamp) / 1000 : 0;
+                lastTimestamp = ts;
+                pointerX += PIXELS_PER_SECOND * dt;
+
+                let idx = pathPoints.findIndex(pt => pt.x >= pointerX);
+                if (idx < 0) idx = pathPoints.length - 1;
+
+                if (firstSweep) {
+                    drawnPoints = pathPoints.slice(0, idx + 1);
+                    waveformPath.setAttribute("d", pointsToPath(drawnPoints));
+                    if (pointerX > w) firstSweep = false;
+                } else {
+                    if (pointerX > w) {
+                        pointerX = 0; // 🟢 Just resets the visual pointer
+                        pathPoints = generateWaveformPoints();
+                    }
+                    const es = pointerX - ERASE_WIDTH / 2, ee = pointerX + ERASE_WIDTH / 2;
+                    const si = drawnPoints.findIndex(pt => pt && pt.x >= es);
+                    const ei = drawnPoints.findIndex(pt => pt && pt.x > ee);
+                    for (let i = (si < 0 ? 0 : si); i < (ei < 0 ? drawnPoints.length : ei); i++) {
+                        drawnPoints[i] = pathPoints[i];
+                    }
+                    waveformPath.setAttribute("d", pointsToPath(drawnPoints));
+                }
+
+                const cur = pathPoints[idx];
+                if (cur) {
+                    pointerHead.setAttribute("cx", cur.x);
+                    pointerHead.setAttribute("cy", cur.y);
+                }
+                animationFrameId = requestAnimationFrame(animationLoop);
+            }
+
+            function applyNewParams() {
+                customBeatsParameters = [];
+                customBeatsContainer.querySelectorAll(".custom-beat-row").forEach(row => {
+                    const beat = {};
+                    row.querySelectorAll("input").forEach(inp => {
+                        beat[inp.dataset.param] = parseFloat(inp.value);
+                    });
+                    customBeatsParameters.push(beat);
+                });
+
+                // 🟢 Reset all counters when applying new params
+                // globalRCycleCounter = 0;
+                // globalPCycleCounter = 0;
+                // globalBeatCounter = 0;
+                // globalCustomIdx = 0;
+                // globalWaitingNormalBeats = 0;
+
+                pathPoints = generateWaveformPoints();
+            }
+
+            initializeSVG();
+            pathPoints = generateWaveformPoints();
+            drawnPoints = Array(pathPoints.length).fill(null);
+            animationFrameId = requestAnimationFrame(animationLoop);
+
+            document.getElementById("applyBtn").addEventListener("click", applyNewParams);
+
+            document.getElementById("pixelsPerMv").addEventListener("change", () => {
+                PIXELS_PER_MV = parseFloat(document.getElementById("pixelsPerMv").value);
+                pathPoints = generateWaveformPoints();
+            });
+        });
+    </script>
+</body>
+
+</html>
