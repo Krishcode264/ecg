@@ -10,7 +10,6 @@ interface ECGCanvasProps {
 
 const POINTER_RADIUS = 6;
 
-
 export const ECGCanvas: React.FC<ECGCanvasProps> = ({ config, width, height }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
@@ -90,7 +89,11 @@ export const ECGCanvas: React.FC<ECGCanvasProps> = ({ config, width, height }) =
       if (pointerXRef.current > width) {
         pointerXRef.current = 0;
         pathPointsRef.current = generateWaveformPoints();
+        // DO NOT reset drawnPoints - keep the previous waveform visible
+        // Only update the area around the pointer as it moves
       }
+      
+      // Progressive update: only update the small area around the pointer
       const es = pointerXRef.current - 12 / 2;
       const ee = pointerXRef.current + 12 / 2;
       const si = drawnPointsRef.current.findIndex(pt => pt && pt.x >= es);
@@ -125,8 +128,9 @@ export const ECGCanvas: React.FC<ECGCanvasProps> = ({ config, width, height }) =
 
   useEffect(() => {
     ecgGenerator.updatePixelsPerMv(config.pixelsPerMv);
+    // Regenerate the entire pathPoints array with new parameters
     pathPointsRef.current = generateWaveformPoints();
-    drawnPointsRef.current = Array(pathPointsRef.current.length).fill(null);
+    // DO NOT reset drawnPoints - let the animation loop update it progressively
   }, [ecgGenerator, config, generateWaveformPoints]);
 
   useEffect(() => {

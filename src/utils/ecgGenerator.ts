@@ -196,7 +196,7 @@ export class ECGGenerator {
       beatCounter++;
     }
 
-    // Persist global state
+    // Persist global state for next generation
     this.globalRCycleCounter = rCycleCounterLocal;
     this.globalPCycleCounter = pCycleCounterLocal;
     this.globalBeatCounter = beatCounter;
